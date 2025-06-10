@@ -1,0 +1,7 @@
+*.swp
+*.bin
+*.elf*
+#ln -s cmsis_core & cmsis_device from external lib folder
+#cmsis_core
+#cmsis_f7
+tags
