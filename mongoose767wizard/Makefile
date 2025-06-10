@@ -5,7 +5,7 @@ CFLAGS += -Wformat-truncation -fno-common -Wconversion -Wno-sign-conversion
 CFLAGS += -g3 -Os -ffunction-sections -fdata-sections
 CFLAGS += -Wno-cast-function-type
 CFLAGS += -I. -Imongoose/ -Icmsis_core/ -Icmsis_f767/
-CFLAGS += -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 $(CFLAGS_EXTRA)
+CFLAGS += -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-d16 $(CFLAGS_EXTRA) #why sp(single precision)?
 LDFLAGS ?= -Tlink.ld -nostdlib -nostartfiles --specs nosys.specs -lc -lgcc -Wl,--gc-sections -Wl,-Map=$@.map
 
 SOURCES = main.c hal.c $(wildcard mongoose/*.c)
@@ -20,8 +20,10 @@ firmware.bin: firmware.elf
 firmware.elf: $(SOURCES) $(wildcard *.h) link.ld Makefile
 	arm-none-eabi-gcc $(SOURCES) $(CFLAGS) $(LDFLAGS) -o $@
 
-flash: firmware.bin
-	STM32_Programmer_CLI -c port=swd -w $< 0x8000000 -hardRst
+#flash: firmware.bin
+#	STM32_Programmer_CLI -c port=swd -w $< 0x8000000 -hardRst
+#no cube products please...
+#either jlink & ozone or stlink & openocd & arm-none-...-gdb
 
 clean:
 	rm -rf firmware.*

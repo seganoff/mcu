@@ -157,7 +157,7 @@ static inline void ethernet_init(void) {
       RCC_AHB1ENR_ETHMACEN | RCC_AHB1ENR_ETHMACTXEN | RCC_AHB1ENR_ETHMACRXEN;
 }
 
-static inline void clock_init(void) {
+static inline void clock_init_hsi(void) {
   FLASH->ACR |= FLASH_LATENCY | BIT(8) | BIT(9);    // Flash latency, prefetch
   RCC->PLLCFGR &= ~((BIT(17) - 1));                 // Clear PLL multipliers
   RCC->PLLCFGR |= (((PLL_P - 2) / 2) & 3) << 16;    // Set PLL_P
@@ -175,4 +175,37 @@ static inline void system_init(void) {
   __DSB();
   __ISB();
 }
+
+static inline void clock_init_hse(void){
+SCB_EnableICache(); SCB_EnableDCache();
+RCC->APB1ENR|=RCC_APB1ENR_PWREN;
+RCC->APB2ENR|=RCC_APB2ENR_SYSCFGEN;
+FLASH->ACR|=(FLASH_LATENCY|FLASH_ACR_PRFTEN|FLASH_ACR_ARTEN);
+while((FLASH->ACR&FLASH_ACR_LATENCY)!=FLASH_ACR_LATENCY_7WS){}
+PWR->CR1|=(PWR_CR1_VOS_0|PWR_CR1_VOS_1|PWR_CR1_ODEN);
+RCC->CR|=(RCC_CR_HSEBYP|RCC_CR_HSEON);
+while((RCC->CR&RCC_CR_HSERDY)!=RCC_CR_HSERDY){}
+RCC->CR|=RCC_CR_CSSON;
+RCC->PLLCFGR=0x24003010;
+RCC->PLLCFGR=0x29403604;// (RCC_PLLCFGR_PLLSRC_HSE)      /*0x0040_0000 0x0040_0000 */
+//| (PLL_M<<RCC_PLLCFGR_PLLM_Pos)              /*0x0000_0004 0x0040_0004 */
+//| (PLL_N << RCC_PLLCFGR_PLLN_Pos)            /*0x0000_3600 0x0040_3604 */
+//| (((PLL_P >> 1) -1) << RCC_PLLCFGR_PLLP_Pos)/*0x0000_0000 0x0040_3604 2:00;4:01;6:10;8:11*/
+//| (PLL_Q<<RCC_PLLCFGR_PLLQ_Pos)              /*0x0900_0000 0x0940_3604 */
+//| (PLL_R<<RCC_PLLCFGR_PLLR_Pos)              /*0x2000_0000 0x2940_3604.assert_equals(RCC_PLLCFGR) */
+//;
+RCC->CR|=RCC_CR_PLLON;
+while((RCC->CR&RCC_CR_PLLRDY)!=RCC_CR_PLLRDY){}
+while((PWR->CSR1&PWR_CSR1_VOSRDY)!=PWR_CSR1_VOSRDY){}
+RCC->CFGR=0x0;
+RCC->CFGR|=RCC_CFGR_HPRE_DIV1;
+RCC->CFGR|=RCC_CFGR_PPRE1_DIV4;
+RCC->CFGR|=RCC_CFGR_PPRE2_DIV2;
+RCC->CFGR|=RCC_CFGR_SW_PLL;
+while((RCC->CFGR&RCC_CFGR_SWS)!=RCC_CFGR_SWS_PLL){}
+// systick & SystemCoreClock=216000000
+//uint32_t SystemCoreClock;
+//SystemCoreClock=216000000;SysTick_Config(SystemCoreClock/1000);
+//LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);MODIFY_REG(RCC->DCKCFGR1, RCC_DCKCFGR1_TIMPRE, Prescaler);
+}//clock init hse end
 

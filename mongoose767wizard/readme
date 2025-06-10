@@ -1,0 +1,10 @@
+clocks setup procedure / method calls traceBack
+startupxxx.S {bl SystemInit [...] main }
+hal.c SystemInit{system_init} hal.h system_init{ fpu enable __DSB __ISB }
+main.c hal_init
+hal.c hal_init
+{
+clock_init SystemCoreClock=SYS_FREQUENCY
+SysTick_Config(sys_FREQ / 1000)
+rng_init uart_init leds_init ether_init
+} 

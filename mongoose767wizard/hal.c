@@ -66,8 +66,9 @@ int _write(int fd, const char *ptr, unsigned int len) {
 
 void hal_init(void) {
 #ifndef MG_HAL_DISABLE_CLOCK
-  clock_init();                            // Set system clock to SYS_FREQUENCY
-  SystemCoreClock = SYS_FREQUENCY;         // Update SystemCoreClock global var
+//clock_init_hsi();                     SystemCoreClock=SYS_FREQUENCY;         
+//Set system clock to SYS_FREQUENCY ; Update SystemCoreClock global var
+clock_init_hse();                     SystemCoreClock=216000000;
 #endif
 #if MG_HAL_SYSTICK != MG_HAL_SYSTICK_NONE
   SysTick_Config(SystemCoreClock / 1000);  // Sys tick every 1ms

@@ -5,10 +5,7 @@
 #include "hal.h"
 #include "mongoose/mongoose_glue.h"
 
-static void blink_timer(void *arg) {
-  (void) arg;
-  gpio_write(LED1, !gpio_read(LED1));
-}
+static void blink_halfs_red(void *arg){(void)arg;gpio_write(LED3,!gpio_read(LED3));}
 
 int main(void) {
   // Cross-platform hardware init
@@ -18,7 +15,7 @@ int main(void) {
   // This blocks forever. Call it at the end of main(), or in a
   // separate RTOS task. Give that task 8k stack space.
   mongoose_init();
-  mg_timer_add(&g_mgr, 1000, MG_TIMER_REPEAT, blink_timer, NULL);
+  mg_timer_add(&g_mgr, 500, MG_TIMER_REPEAT, blink_halfs_red, NULL);
   for (;;) {
     mongoose_poll();
   }
