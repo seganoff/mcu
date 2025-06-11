@@ -23260,7 +23260,7 @@ static size_t mg_tcpip_driver_stm32f_tx(const void *buf, size_t len,
   } else if ((s_txdesc[s_txno][0] & MG_BIT(31))) {
     ifp->nerr++;
     MG_ERROR(("No free descriptors"));
-    // printf("D0 %lx SR %lx\n", (long) s_txdesc[0][0], (long) ETH->DMASR);
+/*!!!!!!!!// */        printf("D0 %lx SR %lx\n", (long) s_txdesc[0][0], (long) ETH->DMASR);
     len = 0;  // All descriptors are busy, fail
   } else {
     memcpy(s_txbuf[s_txno], buf, len);                           // Copy data
