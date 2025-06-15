@@ -1,0 +1,29 @@
+x201@26a1:~/Desktop/tmp$ wget --mirror --convert-links --adjust-extension --page-requisites https://vivonomicon.com
+366 links converted, 219M ~8min
+
+https://vivonomicon.com/category/stm32_baremetal_examples/page/2/
+https://vivonomicon.com/2018/04/02/bare-metal-stm32-programming-part-1-hello-arm/
+https://vivonomicon.com/2018/04/20/bare-metal-stm32-programming-part-2-making-it-to-main/
+https://vivonomicon.com/2018/04/22/bare-metal-stm32-programming-part-3-leds-and-buttons/
+https://vivonomicon.com/2018/04/25/bare-metal-stm32-programming-part-3-5-supporting-multiple-chips/
+https://vivonomicon.com/2018/04/28/bare-metal-stm32-programming-part-4-intro-to-hardware-interrupts/
+https://vivonomicon.com/2018/04/30/when-is-now-the-ds3231-real-time-clock/
+https://vivonomicon.com/2018/05/20/bare-metal-stm32-programming-part-5-timer-peripherals-and-the-system-clock/
+https://vivonomicon.com/2018/06/17/drawing-to-a-small-tft-display-the-ili9341-and-stm32/
+https://vivonomicon.com/2018/08/23/bare-metal-stm32-programming-part-6-multitasking-with-freertos/
+https://vivonomicon.com/2018/09/05/bare-metal-stm32-programming-part-7-embedded-c-inheritance/
+
+https://vivonomicon.com/category/stm32_baremetal_examples/
+https://vivonomicon.com/2018/12/28/bare-metal-stm32-programming-part-8-learn-to-debug-timing-issues-with-neopixels/
+https://vivonomicon.com/2019/01/13/keeping-up-with-the-moorses-learning-to-use-stm32g0-chips/
+https://vivonomicon.com/2019/05/23/hello-rust-blinking-leds-in-a-new-language/
+https://vivonomicon.com/2019/07/05/bare-metal-stm32-programming-part-9-dma-megamix/
+https://vivonomicon.com/2019/08/14/new-8-pin-arm-core-the-stm32g031j6/
+https://vivonomicon.com/2019/10/15/reading-battery-voltage-with-the-stm32s-adc/
+https://vivonomicon.com/2019/10/26/designing-a-simple-gps-handheld/
+https://vivonomicon.com/2020/02/28/festive-cross-platform-holiday-lights/
+https://vivonomicon.com/2020/06/28/bare-metal-stm32-programming-part-10-uart-communication/
+https://vivonomicon.com/2020/07/26/bare-metal-stm32-programming-part-11-using-external-memories/
+https://vivonomicon.com/2020/08/08/bare-metal-stm32-programming-part-12-using-quad-spi-flash-memory/
+https://vivonomicon.com/2020/09/10/bare-metal-stm32-programming-part-13-running-temporary-ram-programs-and-using-tightly-coupled-memories/
+
