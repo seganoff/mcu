@@ -1,0 +1,30 @@
+lqfp64 p 60 boot0 additional functions: [V sup PP] ds8626rev10,ink59
+       p 28 boot1/pb2 af eventout
+Freq:168Mhz,Max RAM:192KB(128+64ccm),ROM:1MB, hse 8mhz
+5WS, 2 ≤PLLQ ≤15(48MHz); PLLP:2,4,6,8; 50 ≤PLLN ≤432;2 ≤PLLM ≤63
+div1..16 ppre2 84Max apb2 gpio max toggle, ppre1, 42Max apb1
+hse8 m4 n168 p2 q7 | ahb prescaler 1 ppre1:4 42max ppre2:2 84max | cube checked
+
+flash 1mb  0x0800 0000 - 0x080F FFFF
+ccm 64kb   0x1000 0000 - 0x1000 FFFF
+sram 112kb 0x2000 0000 - 0x2001 BFFF
+sram 16kb  0x2001 C000 - 0x2001 FFFF
+
+#arm-none-eabi-gcc -E -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
+ -DSTM32F4 -DSTM32F401CCU6 \
+ -D_ROM=256K -D_RAM=64K -D_ROM_OFF=0x08000000 -D_RAM_OFF=0x20000000 \
+ -P -E libopencm3/ld/linker.ld.S -o generated.stm32f401ccu6.ld
+
+#arm-none-eabi-gcc -E -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 \
+-DSTM32F7 -DSTM32F7CCM -DSTM32F767ZIT6 \
+-D_ROM=2048K -D_RAM=384K -D_CCM=128K -D_CCM_OFF=0x20000000 -D_ROM_OFF=0x08000000 -D_RAM_OFF=0x20020000 \
+-P -E libopencm3/ld/linker.ld.S -o generated.stm32f767zit6.ld
+
+# arm-none-eabi-gcc -E -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 \
+-DSTM32F7 -DSTM32F7CCM -DSTM32F767ZIT6 \
+-D_ROM=2048K -D_RAM=384K -D_CCM=128K -D_CCM_OFF=0x20000000 -D_ROM_OFF=0x08000000 -D_RAM_OFF=0x20020000 \
+-P -E linker.ld.S -o f767_linker
+
+cargo generate --git https://github.com/rust-embedded/cortex-m-quickstart
+
+---------WRansohoff part01----------
