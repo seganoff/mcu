@@ -21,7 +21,9 @@ cmsis-device-f4 #590
 cmsis-device-f7 #540
 cmsis-device-wb
 f7cubeforindex
+STM32F401.svd
+STM32F405.svd
+STM32F411.svd
 STM32F767.svd
-
 
 gh --- WRansohoff---- part02]

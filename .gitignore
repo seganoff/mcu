@@ -4,8 +4,8 @@
 #ln -s cmsis_core & cmsis_device from external lib folder
 #cmsis_core
 #cmsis_f7
-arm_cmsis #ln -s
-device-f4 #ln -s
-startup.s #ln -s
+**/arm_cmsis
+**/device-f4
+startup.s
 
 tags
