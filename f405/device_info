@@ -2,7 +2,7 @@ lqfp64 p 60 boot0 additional functions: [V sup PP] ds8626rev10,ink59
        p 28 boot1/pb2 af eventout
 Freq:168Mhz,Max RAM:192KB(128+64ccm),ROM:1MB, hse 8mhz
 5WS, 2 ≤PLLQ ≤15(48MHz); PLLP:2,4,6,8; 50 ≤PLLN ≤432;2 ≤PLLM ≤63
-div1..16 ppre2 84Max apb2 gpio max toggle, ppre1, 42Max apb1
+/*div1..16 ppre2 84Max apb2 gpio max toggle*/ wtf? gpios ar  on ahb1 , ppre1, 42Max apb1
 hse8 m4 n168 p2 q7 | ahb prescaler 1 ppre1:4 42max ppre2:2 84max | cube checked
 
 flash 1mb  0x0800 0000 - 0x080F FFFF
@@ -11,5 +11,17 @@ sram 112kb 0x2000 0000 - 0x2001 BFFF
 sram 16kb  0x2001 C000 - 0x2001 FFFF
 
 cargo generate --git https://github.com/rust-embedded/cortex-m-quickstart
+
+$ ll $HOME/external_libs
+arm_cmsis_5_540
+arm_cmsis_5_590
+cmsis-device-c0
+cmsis-device-f1
+cmsis-device-f4 #590
+cmsis-device-f7 #540
+cmsis-device-wb
+f7cubeforindex
+STM32F767.svd
+
 
 gh --- WRansohoff---- part02]
