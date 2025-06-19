@@ -13,6 +13,7 @@ SOURCES += startup.s
 #cmsis_core 5.9.0 f4cubeRelease1.28.2
 #ln -s /home/u262d/codings/external_libs/arm_cmsis_5_590/CMSIS/Core/Include arm_cmsis
 #ln -s /home/u262d/codings/external_libs/cmsis-device-f4/Include/ device-f4
+#first prerequisite $<
 
 all build: firmware.bin
 
@@ -23,6 +24,10 @@ firmware.bin: firmware.elf
 firmware.elf: $(SOURCES) Makefile 405.ld #$(wildcard *.h)
 	arm-none-eabi-gcc $(SOURCES) $(CFLAGS) $(LDFLAGS) -o $@
 #	arm-none-eabi-nm $@
-
+.PHONY: flash debug
+flash: firmware.elf
+	@arm-none-eabi-gdb $< -ex "target extended-remote :3333" -ex "load" -ex "detach" -ex "quit"
+debug: firmware.elf
+	@arm-none-eabi-gdb $< -ex "target extended-remote :3333" -ex "load"
 clean:
 	rm -rf firmware.*
