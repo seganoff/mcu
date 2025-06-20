@@ -3,13 +3,21 @@ lqfp64 p 60 boot0 additional functions: [V sup PP] ds8626rev10,ink59
 Freq:168Mhz,Max RAM:192KB(128+64ccm),ROM:1MB, hse 8mhz
 5WS, 2 ≤PLLQ ≤15(48MHz); PLLP:2,4,6,8; 50 ≤PLLN ≤432;2 ≤PLLM ≤63
 /*div1..16 ppre2 84Max apb2 gpio max toggle*/ wtf? gpios ar  on ahb1 , ppre1, 42Max apb1
-hse8 m4 n168 p2 q7 | ahb prescaler 1 ppre1:4 42max ppre2:2 84max | cube checked
+
+hse8 m4 n168 p2 q7 | SYSCLK 168 ahb HCLK prescaler 1 168 
+ppre1:4 42max PCLK1 APB1 Periph | APB1 Timerclocks *2 (cube) 84
+ppre2:2 84max PCLK2 APB2 Periph | APB2 Timerclocks *2 (cube) 168
+cortex dev_1 To Cortex System timer (cube)
 
 flash 1mb  0x0800 0000 - 0x080F FFFF
 ccm 64kb   0x1000 0000 - 0x1000 FFFF
 sram 112kb 0x2000 0000 - 0x2001 BFFF
 sram 16kb  0x2001 C000 - 0x2001 FFFF
 
+PB2--R1(5.1kΩ)--D(blue)--⏚ 
+PC13--R5(330Ω)--BTN--VDD33
+
+2126Ω ⏚23da
 cargo generate --git https://github.com/rust-embedded/cortex-m-quickstart
 
 $ ll $HOME/external_libs
@@ -26,4 +34,14 @@ STM32F405.svd
 STM32F411.svd
 STM32F767.svd
 
-gh --- WRansohoff---- part02]
+gh --- WRansohoff---- part05]
+
+to inspect:
+funky system_stm32f4xx.c SytemInit_ExtMemCtl()
+/* Call static constructors */ next call bl main
+    bl __libc_init_array
+// wtf is that cube doing (in main before calling sys_clock_config)
+//system interr init
+NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+/* SysTick_IRQn interrupt configuration */
+NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),15, 0));
