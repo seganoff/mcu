@@ -97,7 +97,9 @@ void _init(void) {}//startup.s bl __libc_init_array cpp specific//newlib...
 
 /*interrupts*/
 void SysTick_Handler(void) {s_ticks++;}
-void EXTI9_5_IRQHandler(void){if((*EXTI).PR&EXTI_PR_PR6){(*EXTI).PR|=EXTI_PR_PR6;gpio_toggle(PIN('B',5));}}
+void EXTI9_5_IRQHandler(void){
+if((*EXTI).PR&EXTI_PR_PR6){(*EXTI).PR|=EXTI_PR_PR6;gpio_toggle(PIN('B',5));//printf("exti9_5 ticks:0x%lx",s_ticks);
+}}
 void TIM2_IRQHandler(void){// Handle a timer 'update' interrupt event
 if (TIM2->SR & TIM_SR_UIF) {TIM2->SR &= ~(TIM_SR_UIF);gpio_toggle(PIN('B',2));}
 //(*GPIOB).ODR^= GPIO_ODR_OD2;}//pb2 toggle
@@ -146,11 +148,11 @@ static inline void uart_init(USART_TypeDef *uart, unsigned long baud) {
 //  if (uart == USART1) freq = APB2_FREQUENCY, RCC->APB2ENR |= BIT(4);
 //  if (uart == USART2) freq = APB1_FREQUENCY, RCC->APB1ENR |= BIT(17);
 //  if (uart == USART3) freq = APB1_FREQUENCY, RCC->APB1ENR |= BIT(18); 
-freq = (sys_clock_hz/4), RCC->APB1ENR |= BIT(18);
+freq = (sys_clock_hz/4), RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
 //  if (uart == USART1) tx = PIN('A', 9), rx = PIN('A', 10);
 //  if (uart == USART2) tx = PIN('A', 2), rx = PIN('A', 3);
-//  if (uart == USART3) 
-tx = PIN('D', 8), rx = PIN('D', 9);
+//purple RXD     , orange TXD debugger pins
+tx = PIN('B', 10), rx = PIN('B', 11);
 
 gpio_init(tx, GPIO_MODE_AF, GPIO_OTYPE_PUSH_PULL, GPIO_SPEED_HIGH, 0, af);
 gpio_init(rx, GPIO_MODE_AF, GPIO_OTYPE_PUSH_PULL, GPIO_SPEED_HIGH, 0, af);

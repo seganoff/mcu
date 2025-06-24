@@ -6,6 +6,7 @@
 #cmsis_f7
 **/arm_cmsis
 **/device-f4
+**/freertos
 startup.s
 
 tags
