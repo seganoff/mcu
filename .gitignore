@@ -1,6 +1,14 @@
 *.swp
 *.bin
 *.elf*
+*.hex
+*.srec
+*.list
+*.map
+
+*.o
+*.d
+*.a
 #ln -s cmsis_core & cmsis_device from external lib folder
 #cmsis_core
 #cmsis_f7
