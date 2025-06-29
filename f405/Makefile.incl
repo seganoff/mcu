@@ -1,23 +1,24 @@
-######################################################################
-#  Rules etc. adapted from libopencm3
-######################################################################
+########################################
+#  Project in subfolder
+#BINARY		= [project name]
+#SRCFILES	= [source files .c]
+#all: elf bin ??? why here?
+#include ../Makefile.incl
+#######################################
+#######################################
+#  Makefile.incl   TGT as in target   #
+#######################################
 
-PREFIX		?= arm-none-eabi
+PREFIX		?= arm-none-eabi #ok
+TOP_DIR 	:= $(dir $(abspath $(lastword $(MAKEFILE_LIST)))) #ok for LDSCRIPT var
 
-TOP_DIR 	:= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-#OPENCM3_DIR 	:= $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/libopencm3)
-
-#LIBNAME	= opencm3_stm32f1
-#LIBNAME	= opencm3_stm32f4
-#DEFS		+= -DSTM32F1
-#DEFS += -DSTM32F4
-
+#change this for other mcu families
 FP_FLAGS	?= -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ARCH_FLAGS	= -mthumb -mcpu=cortex-m4 $(FP_FLAGS)
 ASFLAGS		= -mthumb -mcpu=cortex-m4
 
 CC		:= $(PREFIX)-gcc
-CXX		:= $(PREFIX)-g++
+#CXX		:= $(PREFIX)-g++
 LD		:= $(PREFIX)-gcc
 AR		:= $(PREFIX)-ar
 AS		:= $(PREFIX)-as
@@ -25,18 +26,14 @@ OBJCOPY		:= $(PREFIX)-objcopy
 SIZE		:= $(PREFIX)-size
 OBJDUMP		:= $(PREFIX)-objdump
 GDB		:= $(PREFIX)-gdb
-#STFLASH		= $(shell which st-flash)
-#STYLECHECK	:= /checkpatch.pl
-#STYLECHECKFLAGS	:= --no-tree -f --terse --mailback
-#STYLECHECKFILES	:= $(shell find . -name '*.[ch]')
 OPT		:= -Os -g
 #CSTD		?= -std=c99
 
-TEMP1 		= $(patsubst %.c,%.o,$(SRCFILES))
-TEMP2		= $(patsubst %.asm,%.o,$(TEMP1))
-OBJS 		= $(patsubst %.cpp,%.o,$(TEMP2))
+TEMPC 		= $(patsubst %.c,%.o,$(SRCFILES))
+OBJS 		= $(patsubst %.s,%.o,$(TEMPC))
 
-#LDSCRIPT	?= $(TOP_DIR)/stm32f103c8t6.ld
+
+#tell me which linkerScript to use
 LDSCRIPT	?= $(TOP_DIR)/ccu6linker_script
 
 TGT_CFLAGS	+= $(OPT) $(CSTD)
@@ -44,18 +41,18 @@ TGT_CFLAGS	+= $(ARCH_FLAGS)
 TGT_CFLAGS	+= -Wextra -Wshadow -Wimplicit-function-declaration
 TGT_CFLAGS	+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
 TGT_CFLAGS	+= -fno-common -ffunction-sections -fdata-sections
-TGT_CFLAGS	+= -I$(OPENCM3_DIR)/include
+#TGT_CFLAGS	+= -I$(OPENCM3_DIR)/include
 ##TGT_CFLAGS	+= -I$(TOP_DIR)/rtos/libwwg/include
 
-TGT_CXXFLAGS	+= $(OPT) $(CXXSTD)
-TGT_CXXFLAGS	+= $(ARCH_FLAGS)
-TGT_CXXFLAGS	+= -Wextra -Wshadow -Wredundant-decls  -Weffc++
-TGT_CXXFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+#TGT_CXXFLAGS	+= $(OPT) $(CXXSTD)
+#TGT_CXXFLAGS	+= $(ARCH_FLAGS)
+#TGT_CXXFLAGS	+= -Wextra -Wshadow -Wredundant-decls  -Weffc++
+#TGT_CXXFLAGS	+= -fno-common -ffunction-sections -fdata-sections
 
-TGT_CPPFLAGS	+= -MD
-TGT_CPPFLAGS	+= -Wall -Wundef
-TGT_CPPFLAGS	+= $(DEFS)
-TGT_CPPFLAGS	+= -I$(OPENCM3_DIR)/include
+#TGT_CPPFLAGS	+= -MD
+#TGT_CPPFLAGS	+= -Wall -Wundef
+#TGT_CPPFLAGS	+= $(DEFS)
+#TGT_CPPFLAGS	+= -I$(OPENCM3_DIR)/include
 ##TGT_CPPFLAGS	+= -I$(TOP_DIR)/rtos/libwwg/include
 
 TGT_LDFLAGS	+= --static -nostartfiles
@@ -66,9 +63,9 @@ TGT_LDFLAGS	+= -Wl,--gc-sections
 
 LDLIBS		+= -specs=nosys.specs
 LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
-##LDLIBS		+= -L$(TOP_DIR)/rtos/libwwg -lwwg
+##LDLIBS -L<search path for lib file> -l<libname> #(.a) file 
 #LDLIBS		+= -L$(OPENCM3_DIR)/lib -lopencm3_stm32f1
-LDLIBS		+= -L$(OPENCM3_DIR)/lib -lopencm3_stm32f4
+#LDLIBS		+= -L$(OPENCM3_DIR)/lib -lopencm3_stm32f4
 
 .SUFFIXES:	.elf .bin .hex .srec .list .map .images
 .SECONDEXPANSION:
@@ -113,19 +110,18 @@ print-%:
 %.o: %.c
 	@#printf "  CC      $(*).c\n"
 	$(CC) $(TGT_CFLAGS) $(CFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).c
+#Linus says no cpp, so ...
+#%.o: %.cxx
+#	@#printf "  CXX     $(*).cxx\n"
+#	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cxx
+#%.o: %.cpp
+#	@#printf "  CXX     $(*).cpp\n"
+#	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cpp
 
-%.o: %.cxx
-	@#printf "  CXX     $(*).cxx\n"
-	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cxx
-
-%.o: %.cpp
-	@#printf "  CXX     $(*).cpp\n"
-	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cpp
-
-%.o: %.asm
+%.o: %.s
 	$(AS) $(ASFLAGS) -o $*.o -c $<
 
-clean:
+clean: #generated.* opencm's stuff todelete
 	@#printf "  CLEAN\n"
 	$(RM) *.o *.d generated.* $(OBJS) $(patsubst %.o,%.d,$(OBJS))
 
@@ -133,21 +129,15 @@ clean:
 clobber: clean
 	rm -f *.elf *.bin *.hex *.srec *.list *.map $(CLOBBER)
 
-# Flash 64k Device
-#flash:	$(BINARY).bin
-#	$(STFLASH) $(FLASHSIZE) write $(BINARY).bin 0x8000000
-# Flash 128k Device
-#bigflash: $(BINARY).bin
-#	$(STFLASH) --flash=128k write $(BINARY).bin 0x8000000
 dfuflash: $(BINARY).bin
-	dfu-util -a 0 -D $(BINARY).bin -s 0x08000000
+	@dfu-util -a 0 -D $(BINARY).bin -s 0x08000000
 stflash: $(BINARY).bin
-	st-flash --debug write $(BINARY).bin 0x08000000
+	@st-flash --debug write $(BINARY).bin 0x08000000
 all: elf bin
 
 .PHONY: images clean elf bin hex srec list all dfuflash stflash
 
--include $(OBJS:.o=.d)
+-include $(OBJS:.o=.d) #.d dependency related stuff
 
 # End
 
