@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 #define BIT(x) (1UL << (x))
 #define CLRSET(reg, clear, set) ((reg) = ((reg) & ~(clear)) | (set))
 #define PIN(bank, num) ((((bank) - 'A') << 8) | (num))
@@ -42,7 +45,7 @@ gpio_init(pin, GPIO_MODE_OUTPUT,GPIO_OTYPE_PUSH_PULL,GPIO_SPEED_HIGH,GPIO_PULL_N
 
 static uint32_t sys_clock_hz;
 
-static volatile uint32_t s_ticks;
+//static volatile uint32_t s_ticks;
 
 static inline void spin(volatile uint32_t count) {while (count--) /*(void) 0;*/asm("nop");}
 
@@ -71,7 +74,10 @@ while((PWR->CSR&PWR_CSR_VOSRDY)!=PWR_CSR_VOSRDY){}
 (*RCC).CFGR|=(RCC_CFGR_HPRE_DIV1|RCC_CFGR_PPRE2_DIV2|RCC_CFGR_PPRE1_DIV4);
 (*RCC).CFGR|=RCC_CFGR_SW_PLL;
 while((RCC->CFGR&RCC_CFGR_SWS)!=RCC_CFGR_SWS_PLL){}
-sys_clock_hz=168000000; SysTick_Config(sys_clock_hz/1000);
+sys_clock_hz=168000000;
+//#if !defined(FREERTOS_CONFIG_H)
+//SysTick_Config(sys_clock_hz/1000);
+//#endif
 }//clock init hse end
 
 int _fstat(int fd, struct stat *st) {
@@ -96,7 +102,7 @@ int mkdir(const char *path, mode_t mode) { (void) path, (void) mode; return -1;}
 void _init(void) {}//startup.s bl __libc_init_array cpp specific//newlib...
 
 /*interrupts*/
-void SysTick_Handler(void) {s_ticks++;}
+//void SysTick_Handler(void) {s_ticks++;}
 void EXTI9_5_IRQHandler(void){
 if((*EXTI).PR&EXTI_PR_PR6){(*EXTI).PR|=EXTI_PR_PR6;gpio_toggle(PIN('B',5));//printf("exti9_5 ticks:0x%lx",s_ticks);
 }}
@@ -122,8 +128,8 @@ void exti_attach(void){
 (*EXTI).FTSR|=EXTI_FTSR_TR6;
 NVIC_SetPriority(EXTI9_5_IRQn,0x03);
 NVIC_EnableIRQ(EXTI9_5_IRQn);
-NVIC_SetPriority(TIM2_IRQn,0x03);
-NVIC_EnableIRQ(TIM2_IRQn);
+//NVIC_SetPriority(TIM2_IRQn,0x03);
+//NVIC_EnableIRQ(TIM2_IRQn);
 }
 
 void SystemInit(void){

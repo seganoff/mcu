@@ -34,7 +34,9 @@ STM32F405.svd
 STM32F411.svd
 STM32F767.svd
 
-gh --- WRansohoff---- part05]
+gh --- WRansohoff---- part06]
+
+systick HandlerZ rtos vs. s_ticks++
 
 to inspect:
 funky system_stm32f4xx.c SytemInit_ExtMemCtl()

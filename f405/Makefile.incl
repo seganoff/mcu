@@ -36,7 +36,8 @@ OBJS 		= $(patsubst %.s,%.o,$(TEMPC))
 
 
 #tell me which linkerScript to use
-LDSCRIPT	?= $(TOP_DIR)/405.ld
+#LDSCRIPT	?= $(TOP_DIR)/405.ld
+LDSCRIPT	?= $(TOP_DIR)/pincheCube405.ld
 
 TGT_CFLAGS	+= $(OPT) $(CSTD)
 TGT_CFLAGS	+= $(ARCH_FLAGS)
@@ -133,13 +134,14 @@ clean: #generated.* opencm's stuff todelete
 clobber: clean
 	rm -f *.elf *.bin *.hex *.srec *.list *.map $(CLOBBER)
 flash: $(BINARY).elf
-	@arm-none-eabi-gdb $< -ex "target extended-remote :3333" -ex "load" -ex "detach" -ex "quit"
+	$(GDB) $< -ex "target extended-remote :3333" -ex "load" -ex "detach" -ex "quit"
 debug: $(BINARY).elf
-	@arm-none-eabi-gdb $< -ex "target extended-remote :3333" -ex "load"
+	$(GDB) $< -ex "target extended-remote :3333" -ex "load"
 dfuflash: $(BINARY).bin
 	@dfu-util -a 0 -D $(BINARY).bin -s 0x08000000
 stflash: $(BINARY).bin
-	@st-flash --debug write $(BINARY).bin 0x08000000
+	@st-flash write $(BINARY).bin 0x08000000
+#--debug, but spams output
 all build: elf bin
 
 #.PHONY: images clean elf bin hex srec list all dfuflash stflash flash debug
