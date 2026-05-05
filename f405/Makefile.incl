@@ -134,7 +134,7 @@ clean: #generated.* opencm's stuff todelete
 clobber: clean
 	rm -f *.elf *.bin *.hex *.srec *.list *.map $(CLOBBER)
 flash: $(BINARY).elf
-	$(GDB) $< -ex "target extended-remote :3333" -ex "load" -ex "detach" -ex "quit"
+	$(GDB) $< -ex "target extended-remote :3333" -ex "load" -ex "monitor reset" -ex "detach" -ex "quit"
 debug: $(BINARY).elf
 	$(GDB) $< -ex "target extended-remote :3333" -ex "load"
 dfuflash: $(BINARY).bin
