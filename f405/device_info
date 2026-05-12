@@ -1,9 +1,9 @@
 #cmsis_core 5.9.0 f4cubeRelease1.28.2
 # in same folder as Makefile.incl, cuz make print-TOP-DIR
 link_headers_f405() { \
-ln -s $HOME/codings/external_lib/cmsis-device-f4/Source/Templates/gcc/startup_stm32f405xx.s startup.s ; \
-ln -s $HOME/codings/external_lib/arm_cmsis_5_590/CMSIS/Core/Include arm_cmsis ; \
-ln -s $HOME/codings/external_lib/cmsis-device-f4/Include/ device-f4 ; }
+ln -s $HOME/codings/external_libs/cmsis-device-f4/Source/Templates/gcc/startup_stm32f405xx.s startup.s ; \
+ln -s $HOME/codings/external_libs/arm_cmsis_5_590/CMSIS/Core/Include arm_cmsis ; \
+ln -s $HOME/codings/external_libs/cmsis-device-f4/Include device-f4 ; }
 
 
 

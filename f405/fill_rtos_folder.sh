@@ -3,8 +3,7 @@
 #sysroot='rtos_sysroot' #repos_root dir
 
 #mkdir freertos (gitignored) && cp this.file freertos && sh this.file TODO into Makefile
-#sysroot="$HOME/codings/external_libs/rtos-kernel"
-sysroot="$HOME/codings/external_lib/rtos-kernel"
+sysroot="$HOME/codings/external_libs/rtos-kernel"
 dest='./' #no arg, just copy over here
 compiler='GCC' #arg
 mcu='ARM_CM4F' #arg
