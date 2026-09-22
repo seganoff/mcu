@@ -1,7 +1,3 @@
-/* usbipd list (--help)
- *   bind --busid x-y (admin mode)
- *   attach --wsl --busid x-y (detach)
- */
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
@@ -11,43 +7,43 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/usart.h>
 
-
 #include "usbcdc.h"
-//static void uart3_init(void)
-//{
-//    //rcc_periph_clock_enable(RCC_GPIOB);
-//    rcc_periph_clock_enable(RCC_USART3);
-//
-//    //* PB10 = USART3_TX
-//    gpio_set_mode(
-//        GPIOB,
-//        GPIO_MODE_OUTPUT_50_MHZ,
-//        GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,
-//        GPIO_USART3_TX //GPIO10
-//    );
-//
-//    // PB11 = USART3_RX, if you need RX
-//    gpio_set_mode(
-//        GPIOB,
-//        GPIO_MODE_INPUT,
-//        GPIO_CNF_INPUT_FLOAT,
-//        GPIO_USART3_RX //GPIO11
-//    );
-//
-//    usart_set_baudrate(USART3, 115200);
-//    usart_set_databits(USART3, 8);
-//    usart_set_stopbits(USART3, USART_STOPBITS_1);
-//    usart_set_mode(USART3, USART_MODE_TX_RX);
-//    usart_set_parity(USART3, USART_PARITY_NONE);
-//    usart_set_flow_control(USART3, USART_FLOWCONTROL_NONE);
-//
-//    usart_enable(USART3);
-//}
-//static void uart3_putc(char c)
-//{usart_send_blocking(USART3, c);}
-//
-//static void uart3_puts(const char *s)
-//{while (*s)uart3_putc(*s++);}
+static void uart3_init(void)
+{
+    //rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_USART3);
+
+    //* PB10 = USART3_TX
+    gpio_set_mode(
+        GPIOB,
+        GPIO_MODE_OUTPUT_50_MHZ,
+        GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,
+        GPIO_USART3_TX //GPIO10
+    );
+
+    // PB11 = USART3_RX, if you need RX
+    gpio_set_mode(
+        GPIOB,
+        GPIO_MODE_INPUT,
+        GPIO_CNF_INPUT_FLOAT,
+        GPIO_USART3_RX //GPIO11
+    );
+
+    usart_set_baudrate(USART3, 115200);
+    usart_set_databits(USART3, 8);
+    usart_set_stopbits(USART3, USART_STOPBITS_1);
+    usart_set_mode(USART3, USART_MODE_TX_RX);
+    usart_set_parity(USART3, USART_PARITY_NONE);
+    usart_set_flow_control(USART3, USART_FLOWCONTROL_NONE);
+
+    usart_enable(USART3);
+}
+
+static void uart3_putc(char c)
+{usart_send_blocking(USART3, c);}
+
+static void uart3_puts(const char *s)
+{while (*s)uart3_putc(*s++);}
 //
 
 //static void counter(void *arg __attribute__((unused))) {
@@ -75,12 +71,13 @@ while(1)//for (;;)
 {
 //gpio_set(GPIOC,GPIO13);
 //vTaskDelay(pdMS_TO_TICKS(2000));
-gpio_toggle(GPIOB,GPIO2);
+//gpio_toggle(GPIOB,GPIO2);
 vTaskDelay(pdMS_TO_TICKS(600));
 //uart3_puts("debug: toggle next\r\n");
-//usb_puts("debug: con rn \r\n");
-//usb_puts("debug: con n \n");
-//usb_puts("debug: sin rn");
+uart3_puts("tick\r\n");
+usb_puts("debug: con rn \r\n");
+usb_puts("debug: con n \n");
+usb_puts("debug: sin rn");
 }
 }
 
@@ -95,12 +92,12 @@ rcc_periph_clock_enable(RCC_GPIOB);
 gpio_set_mode(GPIOB,GPIO_MODE_OUTPUT_2_MHZ,GPIO_CNF_OUTPUT_PUSHPULL,GPIO2);
 gpio_set_mode(GPIOC,GPIO_MODE_OUTPUT_2_MHZ,GPIO_CNF_OUTPUT_PUSHPULL,GPIO13);
 
-gpio_set(GPIOB,GPIO2);
-//uart3_init();
+//gpio_set(GPIOB,GPIO2);
+uart3_init();
 
-//uart3_puts("init done: \n");
-//uart3_puts("start usb next\r\n");
-//uart3_putc('\r');uart3_putc('\n');
+uart3_puts("init done: \n");
+uart3_puts("start usb next\r\n");
+uart3_putc('\r');uart3_putc('\n');
 
 //gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO14);
 //gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO14);
