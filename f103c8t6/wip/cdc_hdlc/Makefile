@@ -3,13 +3,14 @@
 ######################################################################
 
 BINARY		= cdc_hdlc
-SRCFILES	= main.c usbcdc.c\
+SRCFILES	= giant_main.c \
 		freertos/heap_4.c \
 		freertos/list.c freertos/port.c \
 		freertos/queue.c \
 		freertos/tasks.c \
 		glue_rtos_locm3.c
 #		freertos/opencm3.c
+#		usbcdc.c \
 
 
 #all: elf bin

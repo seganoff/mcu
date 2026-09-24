@@ -1,0 +1,622 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+#include <FreeRTOS.h>
+#include <task.h>
+#include <queue.h>
+
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/usart.h>
+
+#include "usbcdc.h"
+
+
+/*********************************************************************
+ * Queues
+ *********************************************************************/
+
+static QueueHandle_t txq2;
+static QueueHandle_t rxq2;
+
+
+/*********************************************************************
+ * USART initialization
+ *
+ * USART3:
+ *   PB10 = TX
+ *   PB11 = RX
+ *
+ * USART2:
+ *   PA2 = TX
+ *   PA3 = RX
+ *
+ * USART3 is only used for debug.
+ * USART2 is connected to the MAX3232 / LG RS-232 device.
+ *********************************************************************/
+
+static void uart_init(void)
+{
+    /***************************************************************
+     * USART3 - DEBUG
+     ***************************************************************/
+
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_USART3);
+
+    /* PB10 = USART3_TX */
+    gpio_set_mode(
+        GPIOB,
+        GPIO_MODE_OUTPUT_50_MHZ,
+        GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,
+        GPIO_USART3_TX
+    );
+
+    /* PB11 = USART3_RX */
+    gpio_set_mode(
+        GPIOB,
+        GPIO_MODE_INPUT,
+        GPIO_CNF_INPUT_FLOAT,
+        GPIO_USART3_RX
+    );
+
+    usart_set_baudrate(USART3, 115200);
+    usart_set_databits(USART3, 8);
+    usart_set_stopbits(USART3, USART_STOPBITS_1);
+    usart_set_mode(USART3, USART_MODE_TX_RX);
+    usart_set_parity(USART3, USART_PARITY_NONE);
+    usart_set_flow_control(USART3, USART_FLOWCONTROL_NONE);
+
+    usart_enable(USART3);
+
+
+    /***************************************************************
+     * USART2 - RS232 / LG MONITOR
+     ***************************************************************/
+
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_USART2);
+
+    /* PA2 = USART2_TX */
+    gpio_set_mode(
+        GPIOA,
+        GPIO_MODE_OUTPUT_50_MHZ,
+        GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,
+        GPIO_USART2_TX
+    );
+
+    /* PA3 = USART2_RX */
+    gpio_set_mode(
+        GPIOA,
+        GPIO_MODE_INPUT,
+        GPIO_CNF_INPUT_FLOAT,
+        GPIO_USART2_RX
+    );
+
+    usart_set_baudrate(USART2, 9600);
+    usart_set_databits(USART2, 8);
+    usart_set_stopbits(USART2, USART_STOPBITS_1);
+    usart_set_mode(USART2, USART_MODE_TX_RX);
+    usart_set_parity(USART2, USART_PARITY_NONE);
+    usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
+
+    usart_enable(USART2);
+
+
+    /***************************************************************
+     * Queues
+     ***************************************************************/
+
+    txq2 = xQueueCreate(256, sizeof(uint8_t));
+    rxq2 = xQueueCreate(256, sizeof(uint8_t));
+
+    configASSERT(txq2 != NULL);
+    configASSERT(rxq2 != NULL);
+}
+
+
+/*********************************************************************
+ * USART3 debug output
+ *
+ * These are deliberately blocking.
+ * USART3 is now just our debug console.
+ *********************************************************************/
+
+static void debug_putc(char c)
+{
+    usart_send_blocking(USART3, c);
+}
+
+static void debug_puts(const char *s)
+{
+    while (*s)
+        debug_putc(*s++);
+}
+
+
+/*********************************************************************
+ * USART2 non-blocking hardware helpers
+ *********************************************************************/
+
+/*
+ * Try to transmit one byte.
+ *
+ * Returns:
+ *   true  = byte written
+ *   false = USART2 TX register wasn't ready
+ */
+static bool uart2_hw_putc_nb(uint8_t c)
+{
+    if (!(USART_SR(USART2) & USART_SR_TXE))
+        return false;
+
+    usart_send(USART2, c);
+
+    return true;
+}
+
+
+/*
+ * Try to receive one byte.
+ *
+ * Returns:
+ *   -1    = no byte available
+ *   0..255 = received byte
+ */
+static int uart2_hw_getc_nb(void)
+{
+    if (!(USART_SR(USART2) & USART_SR_RXNE))
+        return -1;
+
+    return usart_recv(USART2);
+}
+
+
+/*********************************************************************
+ * USB -> USART2
+ *
+ * Reads one complete command line from the USB CDC terminal.
+ *
+ * Example:
+ *
+ *     kh 01 24<Enter>
+ *
+ * becomes:
+ *
+ *     'k' 'h' ' ' '0' '1' ' ' '2' '4' '\r'
+ *
+ * and is placed into txq2.
+ *********************************************************************/
+
+static void usb_to_rs232_task(void *arg)
+{
+    (void)arg;
+
+    char line[256];
+    size_t pos = 0;
+
+    debug_puts("USB -> RS232 task started\r\n");
+
+    for (;;) {
+
+        /*
+         * usb_getc() blocks until a character arrives.
+         * That's exactly what we want for this task.
+         */
+        int c = usb_getc();
+
+        if (c < 0)
+            continue;
+
+
+        /***********************************************************
+         * ENTER
+         ***********************************************************/
+
+        if (c == '\r' || c == '\n') {
+
+            /*
+             * Don't send empty commands.
+             */
+            if (pos > 0) {
+
+                /*
+                 * Send the complete command to USART2 queue.
+                 */
+                for (size_t i = 0; i < pos; i++) {
+
+                    uint8_t ch = (uint8_t)line[i];
+
+                    xQueueSend(
+                        txq2,
+                        &ch,
+                        portMAX_DELAY
+                    );
+                }
+
+                /*
+                 * LG RS232 protocol uses CR as command terminator.
+                 */
+                uint8_t cr = '\r';
+
+                xQueueSend(
+                    txq2,
+                    &cr,
+                    portMAX_DELAY
+                );
+
+                pos = 0;
+            }
+
+            /*
+             * Newline on the USB terminal.
+             */
+            usb_puts("\r\n");
+
+            continue;
+        }
+
+
+        /***********************************************************
+         * BACKSPACE
+         *
+         * Support both:
+         *
+         *   0x08 = Backspace
+         *   0x7f = Delete
+         ***********************************************************/
+
+        if (c == '\b' || c == 0x7f) {
+
+            if (pos > 0) {
+
+                pos--;
+
+                /*
+                 * Erase character visually in terminal.
+                 */
+                usb_puts("\b \b");
+            }
+
+            continue;
+        }
+
+
+        /***********************************************************
+         * NORMAL CHARACTER
+         ***********************************************************/
+
+        if (pos < sizeof(line) - 1) {
+
+            line[pos++] = (char)c;
+
+            /*
+             * Local terminal echo.
+             */
+            usb_putc((char)c);
+        }
+        else {
+
+            /*
+             * Buffer full.
+             *
+             * We don't add more characters.
+             * Give the user a little indication.
+             */
+            usb_putc('\a');
+        }
+    }
+}
+
+
+/*********************************************************************
+ * USART2 -> USB
+ *
+ * This task:
+ *
+ *   1. Sends bytes from txq2 to USART2.
+ *   2. Polls USART2 RX.
+ *   3. Places received bytes into rxq2.
+ *   4. Sends rxq2 bytes to USB CDC.
+ *   5. Adds CR/LF after the response has stopped.
+ *
+ * There are intentionally no USART interrupts here yet.
+ *********************************************************************/
+
+static void rs232_task(void *arg)
+{
+    (void)arg;
+
+    bool reply_active = false;
+
+    TickType_t last_rx_time = 0;
+
+    debug_puts("RS232 task started\r\n");
+
+
+    for (;;) {
+
+        /***********************************************************
+         * TX:
+         *
+         * txq2 -> USART2
+         ***********************************************************/
+
+        uint8_t txchar;
+
+        if (xQueuePeek(txq2, &txchar, 0) == pdPASS) {
+
+            /*
+             * Only remove the byte from the queue once the
+             * USART hardware is actually ready.
+             */
+            if (uart2_hw_putc_nb(txchar)) {
+
+                xQueueReceive(
+                    txq2,
+                    &txchar,
+                    0
+                );
+            }
+        }
+
+
+        /***********************************************************
+         * RX:
+         *
+         * USART2 -> rxq2
+         ***********************************************************/
+
+        int c = uart2_hw_getc_nb();
+
+        if (c >= 0) {
+
+            uint8_t rxchar = (uint8_t)c;
+
+            /*
+             * Store received byte in RX queue.
+             *
+             * If the queue is full, this byte is dropped rather
+             * than blocking the hardware polling task.
+             */
+            xQueueSend(
+                rxq2,
+                &rxchar,
+                0
+            );
+        }
+
+
+        /***********************************************************
+         * RX queue -> USB
+         ***********************************************************/
+
+        uint8_t usbchar;
+
+        if (xQueueReceive(rxq2, &usbchar, 0) == pdPASS) {
+
+            /*
+             * Print exactly what the LG sent.
+             */
+            usb_putc((char)usbchar);
+
+            /*
+             * We have received something from the monitor.
+             */
+            reply_active = true;
+
+            last_rx_time = xTaskGetTickCount();
+        }
+
+
+        /***********************************************************
+         * RESPONSE END DETECTION
+         *
+         * The LG doesn't necessarily give us a convenient CR/LF
+         * terminator.
+         *
+         * If nothing has arrived for 30 ms, consider the response
+         * complete and move the terminal to a new line.
+         ***********************************************************/
+
+        if (reply_active) {
+
+            TickType_t now = xTaskGetTickCount();
+
+            if ((now - last_rx_time) >= pdMS_TO_TICKS(30)) {
+
+                usb_puts("\r\n");
+
+                reply_active = false;
+            }
+        }
+
+
+        /*
+         * Don't burn 100% CPU when nothing is happening.
+         *
+         * 1 ms is plenty at 9600 baud.
+         */
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+}
+
+
+/*********************************************************************
+ * USART3 debug / flasher task
+ *
+ * USART3 is completely independent from the USB <-> RS232 bridge.
+ *********************************************************************/
+
+static void flasher(void *arg)
+{
+    (void)arg;
+
+    debug_puts(
+        "USART3 debug task started\r\n"
+    );
+
+    for (;;) {
+
+        gpio_toggle(GPIOB, GPIO2);
+
+        debug_puts(
+            "debug: bridge alive\r\n"
+        );
+
+        vTaskDelay(
+            pdMS_TO_TICKS(600)
+        );
+    }
+}
+
+
+/*********************************************************************
+ * main
+ *********************************************************************/
+
+int main(void)
+{
+    /***************************************************************
+     * 72 MHz system clock
+     ***************************************************************/
+
+    rcc_clock_setup_pll(
+        &rcc_hse_configs[RCC_CLOCK_HSE8_72MHZ]
+    );
+
+
+    /***************************************************************
+     * GPIO clocks
+     ***************************************************************/
+
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
+
+
+    /***************************************************************
+     * Debug LEDs
+     ***************************************************************/
+
+    gpio_set_mode(
+        GPIOB,
+        GPIO_MODE_OUTPUT_2_MHZ,
+        GPIO_CNF_OUTPUT_PUSHPULL,
+        GPIO2
+    );
+
+    gpio_set_mode(
+        GPIOC,
+        GPIO_MODE_OUTPUT_2_MHZ,
+        GPIO_CNF_OUTPUT_PUSHPULL,
+        GPIO13
+    );
+
+
+    /***************************************************************
+     * UARTs
+     ***************************************************************/
+
+    uart_init();
+
+
+    /***************************************************************
+     * USART3 debug
+     ***************************************************************/
+
+    debug_puts(
+        "\r\n"
+        "==============================\r\n"
+        "USB -> RS232 bridge\r\n"
+        "==============================\r\n"
+    );
+
+    debug_puts(
+        "USART3 = debug @ 115200\r\n"
+    );
+
+    debug_puts(
+        "USART2 = RS232 @ 9600\r\n"
+    );
+
+
+    /***************************************************************
+     * USB CDC
+     ***************************************************************/
+
+    /*
+     * USB task gets high priority because it needs to keep
+     * usbd_poll() running.
+     */
+    usb_start(
+        true,
+        configMAX_PRIORITIES - 1
+    );
+
+
+    /***************************************************************
+     * Tasks
+     ***************************************************************/
+
+    /*
+     * USB terminal -> RS232 command task.
+     */
+    xTaskCreate(
+        usb_to_rs232_task,
+        "usb2rs232",
+        384,
+        NULL,
+        2,
+        NULL
+    );
+
+
+    /*
+     * RS232 TX/RX + USB response task.
+     */
+    xTaskCreate(
+        rs232_task,
+        "rs232",
+        384,
+        NULL,
+        2,
+        NULL
+    );
+
+
+    /*
+     * USART3 debug task.
+     */
+    xTaskCreate(
+        flasher,
+        "debug",
+        256,
+        NULL,
+        1,
+        NULL
+    );
+
+
+    /***************************************************************
+     * Start FreeRTOS
+     ***************************************************************/
+
+    vTaskStartScheduler();
+
+
+    /*
+     * Scheduler should never return.
+     */
+    for (;;)
+        ;
+}
+
+/*
+ * One caveat: this version uses polling for USART2 rather than interrupts. 
+ * At 9600 baud that's perfectly reasonable for getting the bridge working. 
+ * Once the protocol is behaving, 
+ * we can make USART2 genuinely interrupt-driven so the FreeRTOS queues are 
+ * fed directly from the USART RX/TX interrupts.
+ * */
