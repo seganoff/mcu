@@ -36,9 +36,15 @@ void sys_tick_handler(void){xPortSysTickHandler();}
 
 #echo -n "${opencm3}" > opencm3.c
 
-rtos_sources=''
+PROJECT_NAME='' #
+# check variable set, error if not & message
+libopencm3_sources='' #'/external_libs/libopencm3/'
+# check exist, error if not & message
+rtos_sources='' #'/external_libs/rtos-kernel/'
+# check exist, error if not & message
 compiler_dir='GCC' #wont change, cuz gcc exclusively usage
 mcu_dir='ARM_CM3' # f103 'ARM_CM4F' #f405 ? f706zit6
+
 
 if [[ -d "$folder" ]]; then
     echo "Folder exists"
@@ -60,4 +66,30 @@ fi
 
 [ -e "$path" ] # For checking whether a path exists at all (file, directory, symlink, etc.)
 
+: << 'MAX3232'
 
+             ┌─────────────────────────┐
+             │                         │
+gnd 1   o────┤                         ├────o  8 ->
+vcc 2   o────┤     ┌─────────────┐     ├────o  7 <-
+->  3   o────┤     │   MAX3232   │     ├────o  6 vcc
+<-  4   o────┤     │'            │     ├────o  5 gnd
+             │     └─────────────┘     │
+             │                         │
+             └─────────────────────────┘
+        RS232 side                    TTL side
+module.pin:| pin max3232 | picto | where to connect
+1:              15         -        gnd   (TRS.sleeve)
+2:              16         +    vcc ¡!!NC!!¡ 
+3:              8          ->   TX device (-5,61V) (TRS.Ring)
+4:              7          <-   RX device (0V)     (TRS.Tip)
+
+5:              15          -   gnd mcu.gnd
+6:              16          +   mcu.3.3v
+7:              10          <-  mcu.tx (uart2.a2) 
+8:              9           ->  mcu.rx (uart2.a3)
+
+vcc from mcu(3.3V)
+gnd one from mcu, additional from RS232 device (TRS.sleeve)
+
+MAX3232
