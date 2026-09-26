@@ -1,7 +1,9 @@
 ######################################################################
 # adapted from libopencm3, adapted from ve3wwg bluepill book/repo
 ######################################################################
-.PHONY: images clean clobber elf bin hex srec list all rebuild flash debug
+
+.PHONY: all rebuild clean clobber elf bin hex srec list images flash debug
+# not filenames, but commands for make
 
 PREFIX		?= arm-none-eabi
 
@@ -9,10 +11,9 @@ TOP_DIR 	:= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 #OPENCM3_DIR 	:= $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/libopencm3)
 OPENCM3_DIR 	:= $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/locm3_lnk)
 
-LIBNAME	= opencm3_stm32f1
-#LIBNAME	= opencm3_stm32f4
-DEFS		+= -DSTM32F1 #libopencm3 needs: error: #error "stm32 family not defined."
-#DEFS += -DSTM32F4
+LIBNAME		= opencm3_stm32f1 # opencm3_stm32f4
+DEFS		+= -DSTM32F1 #-DSTM32F4
+#defs for libopencm3: otherwise #error "stm32 family not defined."
 
 FP_FLAGS	?= -msoft-float
 ARCH_FLAGS	= -mthumb -mcpu=cortex-m3 $(FP_FLAGS) -mfix-cortex-m3-ldrd
@@ -21,10 +22,9 @@ ASFLAGS		= -mthumb -mcpu=cortex-m3
 #FP_FLAGS	?= -mfloat-abi=hard -mfpu=fpv4-sp-d16
 #ARCH_FLAGS	= -mthumb -mcpu=cortex-m4 $(FP_FLAGS)
 #ASFLAGS		= -mthumb -mcpu=cortex-m4
-# the big question is, where in STM docs are the arch_flags mentioned?
 
 CC		:= $(PREFIX)-gcc
-CXX		:= $(PREFIX)-g++
+#CXX		:= $(PREFIX)-g++ # cpp
 LD		:= $(PREFIX)-gcc
 AR		:= $(PREFIX)-ar
 AS		:= $(PREFIX)-as
@@ -32,38 +32,37 @@ OBJCOPY		:= $(PREFIX)-objcopy
 SIZE		:= $(PREFIX)-size
 OBJDUMP		:= $(PREFIX)-objdump
 GDB		:= $(PREFIX)-gdb
-#STFLASH		= $(shell which st-flash)
-#STYLECHECK	:= /checkpatch.pl
-#STYLECHECKFLAGS	:= --no-tree -f --terse --mailback
-#STYLECHECKFILES	:= $(shell find . -name '*.[ch]')
-OPT		:= -Os -g
-CSTD		?= -std=c99
+OPT		:= -Os -g #-Os = optimize for size -g  = debugging information
+#CSTD		?= -std=c99
+CSTD		?= -std=gnu99
 
-TEMP1 		= $(patsubst %.c,%.o,$(SRCFILES))
-TEMP2		= $(patsubst %.asm,%.o,$(TEMP1))
-OBJS 		= $(patsubst %.cpp,%.o,$(TEMP2))
+#TEMP1 		= $(patsubst %.c,%.o,$(SRCFILES))
+#TEMP2		= $(patsubst %.asm,%.o,$(TEMP1)) #.asm
+#OBJS 		= $(patsubst %.cpp,%.o,$(TEMP2)) # cpp
 
-#LDSCRIPT	?= $(TOP_DIR)/stm32f103c8t6.ld
-#LDSCRIPT	?= $(TOP_DIR)/ccu6linker_script
+# srcfiles before incl this file!
+OBJS 		:= $(SRCFILES:.c=.o)
+
 LDSCRIPT	?= $(TOP_DIR)/lnk_script.ld
 
 TGT_CFLAGS	+= $(OPT) $(CSTD)
 TGT_CFLAGS	+= $(ARCH_FLAGS)
+TGT_CFLAGS	+= -Wall -Wundef
 TGT_CFLAGS	+= -Wextra -Wshadow -Wimplicit-function-declaration
 TGT_CFLAGS	+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
 TGT_CFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+TGT_CFLAGS	+= -MD # -MD: GCC dependency-generation option. produces & .d containing info about #incl headers
+TGT_CFLAGS	+= $(DEFS)
 TGT_CFLAGS	+= -I$(OPENCM3_DIR)/include
-##TGT_CFLAGS	+= -I$(TOP_DIR)/rtos/libwwg/include
-
-TGT_CXXFLAGS	+= $(OPT) $(CXXSTD)
-TGT_CXXFLAGS	+= $(ARCH_FLAGS)
-TGT_CXXFLAGS	+= -Wextra -Wshadow -Wredundant-decls  -Weffc++
-TGT_CXXFLAGS	+= -fno-common -ffunction-sections -fdata-sections
-
-TGT_CPPFLAGS	+= -MD
-TGT_CPPFLAGS	+= -Wall -Wundef
-TGT_CPPFLAGS	+= $(DEFS)
-TGT_CPPFLAGS	+= -I$(OPENCM3_DIR)/include
+#cpp
+#TGT_CXXFLAGS	+= $(OPT) $(CXXSTD)
+#TGT_CXXFLAGS	+= $(ARCH_FLAGS)
+#TGT_CXXFLAGS	+= -Wextra -Wshadow -Wredundant-decls  -Weffc++
+#TGT_CXXFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+#TGT_CPPFLAGS	+= -MD # -MD moved to TGT_CFLAGS
+#TGT_CPPFLAGS	+= -Wall -Wundef
+#TGT_CPPFLAGS	+= $(DEFS) # went TGT_CFLAGS
+#TGT_CPPFLAGS	+= -I$(OPENCM3_DIR)/include
 ##TGT_CPPFLAGS	+= -I$(TOP_DIR)/rtos/libwwg/include
 
 TGT_LDFLAGS	+= --static -nostartfiles
@@ -74,9 +73,7 @@ TGT_LDFLAGS	+= -Wl,--gc-sections
 
 LDLIBS		+= -specs=nosys.specs
 LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
-##LDLIBS		+= -L$(TOP_DIR)/rtos/libwwg -lwwg
-LDLIBS		+= -L$(OPENCM3_DIR)/lib -lopencm3_stm32f1
-#LDLIBS		+= -L$(OPENCM3_DIR)/lib -lopencm3_stm32f4
+LDLIBS		+= -L$(OPENCM3_DIR)/lib -l$(LIBNAME)
 
 .SUFFIXES:	.elf .bin .hex .srec .list .map .images
 .SECONDEXPANSION:
@@ -120,43 +117,28 @@ print-%:
 
 %.o: %.c
 	@#printf "  CC      $(*).c\n"
-	$(CC) $(TGT_CFLAGS) $(CFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).c
+	$(CC) $(TGT_CFLAGS) $(CFLAGS) -o $(*).o -c $(*).c
+#$(CC) $(TGT_CFLAGS) $(CFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).c # cpp
 
-%.o: %.cxx
-	@#printf "  CXX     $(*).cxx\n"
-	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cxx
-
-%.o: %.cpp
-	@#printf "  CXX     $(*).cpp\n"
-	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cpp
-
-%.o: %.asm
-	$(AS) $(ASFLAGS) -o $*.o -c $<
+# cpp + asm
+#%.o: %.cxx
+#	@#printf "  CXX     $(*).cxx\n"
+#	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cxx
+#
+#%.o: %.cpp
+#	@#printf "  CXX     $(*).cpp\n"
+#	$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cpp
+#
+#%.o: %.asm
+#	$(AS) $(ASFLAGS) -o $*.o -c $<
 
 clean:
 	@#printf "  CLEAN\n"
 	$(RM) *.o *.d generated.* $(OBJS) $(patsubst %.o,%.d,$(OBJS))
 
-
 clobber: clean
 	rm -f *.elf *.bin *.hex *.srec *.list *.map $(CLOBBER)
 
-# Flash 64k Device
-#flash:	$(BINARY).bin
-#	$(STFLASH) $(FLASHSIZE) write $(BINARY).bin 0x8000000
-# Flash 128k Device
-#bigflash: $(BINARY).bin
-#	$(STFLASH) --flash=128k write $(BINARY).bin 0x8000000
-#dfu --reset > still needs ground to R pin to reset properly after "downloading" FW
-#dfuflash: $(BINARY).bin
-#	dfu-util -a 0 -D $(BINARY).bin -s 0x08000000
-#stflash: $(BINARY).bin
-#	st-flash write $(BINARY).bin 0x08000000
-#all: elf bin
-#rebuild: clobber all
-
-#flash: $(BINARY).elf
-#	$(GDB) $< -ex "target extended-remote :3333" -ex "load" -ex "monitor reset" -ex "detach" -ex "quit"
 flash: $(BINARY).elf
 	$(GDB) $< \
 		-ex "target extended-remote :3333" \
@@ -168,8 +150,11 @@ flash: $(BINARY).elf
 debug: $(BINARY).elf
 	$(GDB) $< -ex "target extended-remote :3333" -ex "load"
 
-#.PHONY: images clean elf bin hex srec list all dfuflash stflash rebuild
-
 -include $(OBJS:.o=.d)
+# Include GCC-generated dependency files.
+# -MD causes GCC to generate the .d files.
+# Make uses those dependencies + file timestamps to decide what needs rebuilding.
+# The leading '-' means missing .d files are not an error on the first build.
+
 
 # End

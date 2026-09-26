@@ -1,0 +1,4 @@
+ cp /external_libs/cmsis-device-f1/Include/stm32f103xb.h arm_includes/
+ cp /external_libs/cmsis-device-f1/Include/stm32f1xx.h arm_includes/
+ cp /external_libs/cmsis-device-f1/Include/system_stm32f1xx.h arm_includes/
+ cp /external_libs/arm_cmsis_5_590/CMSIS/Core/Include/core_cm3.h arm_includes/
