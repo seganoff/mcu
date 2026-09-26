@@ -1,5 +1,12 @@
 ######################################################################
-# adapted from libopencm3, adapted from ve3wwg bluepill book/repo
+######################################################################
+# cd TOP_DIR (Makefile.incl, openocd.cfg)
+# ln -s /external_libs/libopencm3		           locm3_lnk
+# cd project_(subdir)/ && mkdir tusb_copy/
+# cp -a /external_libs/tinyusb/src/                        tusb_copy/
+# cd project_(subdir)/arm_includes/
+# ln -s /external_libs/arm_cmsis_5_590/CMSIS/Core/Include/ arm_lnk
+# ln -s /external_libs/cmsis-device-f1/Include/		   f1_lnk
 ######################################################################
 
 .PHONY: all rebuild clean clobber elf bin hex srec list images flash debug
@@ -8,7 +15,6 @@
 PREFIX		?= arm-none-eabi
 
 TOP_DIR 	:= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-#OPENCM3_DIR 	:= $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/libopencm3)
 OPENCM3_DIR 	:= $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/locm3_lnk)
 
 LIBNAME		= opencm3_stm32f1 # opencm3_stm32f4
