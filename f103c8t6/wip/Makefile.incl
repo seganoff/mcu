@@ -3,10 +3,12 @@
 # cd TOP_DIR (Makefile.incl, openocd.cfg)
 # ln -s /external_libs/libopencm3		           locm3_lnk
 # cd project_(subdir)/ && mkdir tusb_copy/
+# mkdir freertos_copy/   && sh fill_rtos.sh
 # cp -a /external_libs/tinyusb/src/                        tusb_copy/
 # cd project_(subdir)/arm_includes/
 # ln -s /external_libs/arm_cmsis_5_590/CMSIS/Core/Include/ arm_lnk
 # ln -s /external_libs/cmsis-device-f1/Include/		   f1_lnk
+######################################################################
 ######################################################################
 
 .PHONY: all rebuild clean clobber elf bin hex srec list images flash debug

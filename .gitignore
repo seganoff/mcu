@@ -12,10 +12,16 @@
 #ln -s cmsis_core & cmsis_device from external lib folder
 #cmsis_core
 #cmsis_f7
-**/arm_cmsis
 **/device-f4
+**/arm_cmsis
 **/freertos
-**/tusb
+#
+**/arm_lnk
+**/f1_lnk
+**/f4_lnk
+**/f7_lnk
+**/freertos_copy
+**/tusb_copy
 startup.s
 
 tags
