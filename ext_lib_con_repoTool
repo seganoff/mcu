@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+<!--
+mkdir /external_libs && chown -R 1000:1000 /external_libs
+var1='
+#ignore all
+*
+**/*
+# track 这些 zhe(8fd9) xie(4e9b)
+!manifest.xml
+!.gitignore
+'
+echo -n "$var1" > .gitignore
+git init 
+git add {.gitignore,manifest.xml} git commit -m
+curl https://storage.googleapis.com/git-repo-downloads/repo > repo-tool
+chmod +x repo-tool
+./repo-tool init -u file:///external_libs -b master -m manifest.xml
+./repo-tool sync
+
+# afterwards rm-rf {~/.repoconfig,~/.repo_.gitconfig.json,.repo,.repo-tool}
+-->
+  <remote name="gh_st" fetch="https://github.com/STMicroelectronics/" />
+  <remote name="gh_arm" fetch="https://github.com/ARM-software/" />
+
+  <project path="arm_cmsis_5_590" remote="gh_arm" revision="refs/tags/5.9.0" name="CMSIS_5.git" />
+  <project path="arm_cmsis_5_540" remote="gh_arm" revision="refs/tags/5.4.0" name="CMSIS_5.git" />
+
+  <project path="cmsis-device-f1" remote="gh_st" revision="master" name="cmsis-device-f1.git" />
+  <project path="cmsis-device-f4" remote="gh_st" revision="master" name="cmsis-device-f4.git" />
+  <project path="cmsis-device-f7" remote="gh_st" revision="master" name="cmsis-device-f7.git" />
+
+</manifest>
+
+<!--
+hXXps://htmlpreview.github.io/?https://github.com/STMicroelectronics/STM32CubeF7/blob/master/Release_Notes.html
+> CMSIS            V5.4_CM7
+
+> STM32F7xx CMSIS  V1.2.10
+
+https://github.com/STMicroelectronics/cmsis-device-f1.git
+https://github.com/STMicroelectronics/STM32CubeF1/blob/master/Drivers/CMSIS/README.md
+says cmsis version 5.4.0 (release notes ni siquiera list cmsis)
+branch master
+https://github.com/ARM-software/CMSIS_5.git
+tag :
+- 5.9.0(f4, mentioned by cube release Note)
+- 5.4.0(f1 & f7)
+-->
