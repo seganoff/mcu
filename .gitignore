@@ -21,7 +21,9 @@
 **/f4_lnk
 **/f7_lnk
 **/freertos_copy
+**/freertos_src
 **/tusb_copy
+**/tusb_src
 startup.s
 
 tags
