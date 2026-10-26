@@ -17,7 +17,7 @@ cp $sysroot/$mem_mang*.c $dest
 cp $sysroot/$incl*.h $dest
 cp $ports* $dest
 
-echo "00a1 ¡ done!¡"
+echo "00a1 ¡ done!¡!"
 
 opencm3="
 #include \"FreeRTOS.h\"
