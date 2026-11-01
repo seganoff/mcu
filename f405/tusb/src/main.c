@@ -8,17 +8,19 @@
 
 #include "tusb.h"
 
-uint32_t SystemCoreClock = 168000000;
-
 
 /* ========================================================================
  * Configuration
  * ======================================================================== */
 
 #define UART_BAUDRATE       115200
-
 #define UART_RX_BUF_SIZE    1024
 #define UART_TX_BUF_SIZE    1024
+uint32_t SystemCoreClock = 168000000;
+/* ========================================================================
+ * interrupts forwarding
+ * ======================================================================== */
+//void otg_fs_isr(void){tud_int_handler(0);}
 
 
 /* ========================================================================
@@ -342,11 +344,36 @@ void tud_cdc_rx_cb(uint8_t itf)
     }
 }
 
+void otg_fs_isr(void){tud_int_handler(0);}
+
+static void usb_gpio_setup(void)
+{
+    rcc_periph_clock_enable(RCC_GPIOA);
+
+    gpio_mode_setup(
+        GPIOA,
+        GPIO_MODE_AF,
+        GPIO_PUPD_NONE,
+        GPIO11 | GPIO12
+    );
+
+    gpio_set_af(
+        GPIOA,
+        GPIO_AF10,
+        GPIO11 | GPIO12
+    );
+
+    gpio_set_output_options(
+        GPIOA,
+        GPIO_OTYPE_PP,
+        GPIO_OSPEED_100MHZ,
+        GPIO11 | GPIO12
+    );
+}
 
 /* ========================================================================
  * Main
  * ======================================================================== */
-
 int main(void)
 {
     clock_setup();
@@ -360,11 +387,15 @@ int main(void)
      */
     usart3_setup();
 
-    /*
-     * TinyUSB device stack.
-     */
+// TinyUSB device stack.
 rcc_periph_clock_enable(RCC_OTGFS);
+usb_gpio_setup();
+//nvic_enable_irq(NVIC_OTG_FS_IRQ);
+//nvic_set_priority(NVIC_OTG_FS_IRQ, 5);
 tusb_init();
+nvic_clear_pending_irq(NVIC_OTG_FS_IRQ);
+nvic_set_priority(NVIC_OTG_FS_IRQ, 5);
+nvic_enable_irq(NVIC_OTG_FS_IRQ);
 
 
     while (1)
